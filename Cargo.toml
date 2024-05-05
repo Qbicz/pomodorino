@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 log = "0.4"
 simple_logger = "5.0"
+native_db = "0.6.0"
+native_model = "0.4.14"
+serde = { version = "1.0", features = ["derive"] } # for native_db
