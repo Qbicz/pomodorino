@@ -15,7 +15,7 @@ mod command;
 use command::Command;
 use log::{error, info};
 use simple_logger::SimpleLogger;
-use std::env;
+use std::{env, io};
 
 // DB start
 use native_db::*;
@@ -57,7 +57,7 @@ impl Task {
 pub fn db_init(builder: &mut DatabaseBuilder) -> Result<Database, db_type::Error> {
     // Initialize the model
     builder.define::<Task>()?;
-    let db = builder.create_in_memory()?;
+    let db = builder.create("db_pomodorino")?;
 
     Ok(db)
 }
@@ -78,6 +78,12 @@ pub fn db_read_all(db: &Database) -> Result<Vec<Task>, db_type::Error> {
     let values: Vec<Task> = r.scan().primary()?.all().collect();
     Ok(values)
 }
+pub fn db_read_in_state(db: &Database, state: String) -> Result<Vec<Task>, db_type::Error> {
+    let mut tasks = db_read_all(&db)?;
+    tasks.retain(|x| x.state == state);
+    Ok(tasks)
+}
+
 pub fn db_rm() {}
 pub fn db_set_done() {}
 pub fn db_set_todo() {}
