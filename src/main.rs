@@ -109,6 +109,24 @@ fn main() {
 
             info!("db tasks: {:?}", tasks);
         }
+        Ok(Command::Start) => {
+            let tasks = db_read_in_state(&db, String::from("todo")).unwrap();
+            for (i, task) in tasks.iter().enumerate() {
+                println!("{i}: {}", task.name)
+            }
+            info!("Choose a task to start: ");
+            let mut input = String::new();
+            match io::stdin().read_line(&mut input) {
+                Ok(_input_size) => match input.trim_end().parse::<usize>() {
+                    Ok(task_num) => {
+                        let task_to_start = tasks.get(task_num);
+                        println!("Task {task_num} was chosen: {:?}", task_to_start.unwrap());
+                    }
+                    Err(e) => error!("Error parsing input {input} to number: {e}"),
+                },
+                Err(error) => println!("error: {error}"),
+            }
+        }
         Ok(command) => {
             info!(
                 "Command not implemented yet: {:?}, args: {:?}",
