@@ -11,83 +11,13 @@
 // 5. Improve displaying
 
 mod command;
+mod db;
 
 use command::Command;
+use db::{DatabaseBuilder, Db};
 use log::{error, info};
 use simple_logger::SimpleLogger;
 use std::{env, io};
-
-// DB start
-use native_db::*;
-use native_model::{native_model, Model};
-use serde::{Deserialize, Serialize};
-
-// #[derive(Copy, Clone, Serialize, Deserialize, PartialEq, Debug)]
-// //#[native_db]
-// enum TaskState {
-//     Todo,
-//     Done,
-// }
-
-// impl InnerKeyValue for TaskState {
-//     fn database_inner_key_value(&self) -> db_type::DatabaseInnerKeyValue {
-//         db_type::DatabaseInnerKeyValue::new(vec![*self as u8])
-//     }
-// }
-
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
-#[native_model(id = 1, version = 1)]
-#[native_db]
-pub struct Task {
-    #[primary_key]
-    name: String,
-    #[secondary_key]
-    state: String, // using String for now, switch to enum when native_db issue resolved
-}
-
-impl Task {
-    pub fn new(name: String) -> Self {
-        Task {
-            name,
-            state: String::from("todo"), // TaskState::Todo,
-        }
-    }
-}
-
-pub fn db_init(builder: &mut DatabaseBuilder) -> Result<Database, db_type::Error> {
-    // Initialize the model
-    builder.define::<Task>()?;
-    let db = builder.create("db_pomodorino")?;
-
-    Ok(db)
-}
-pub fn db_add(db: &Database, name: String) -> Result<(), db_type::Error> {
-    info!("db_add: {name}");
-
-    let rw = db.rw_transaction().unwrap();
-    rw.insert(Task::new(name))?;
-    rw.commit()?;
-    info!("transaction committed!");
-    Ok(())
-}
-pub fn db_read_all(db: &Database) -> Result<Vec<Task>, db_type::Error> {
-    // Read all tasks
-    // Open a read-only transaction
-    let r = db.r_transaction()?;
-    // Iterate items with name starting with "red"
-    let values: Vec<Task> = r.scan().primary()?.all().collect();
-    Ok(values)
-}
-pub fn db_read_in_state(db: &Database, state: String) -> Result<Vec<Task>, db_type::Error> {
-    let mut tasks = db_read_all(&db)?;
-    tasks.retain(|x| x.state == state);
-    Ok(tasks)
-}
-
-pub fn db_rm() {}
-pub fn db_set_done() {}
-pub fn db_set_todo() {}
-// DB end
 
 fn main() {
     info!("Pomodorino start");
@@ -96,21 +26,21 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     // db init
-    let mut builder = DatabaseBuilder::new();
-    let db = db_init(&mut builder).unwrap();
+    let mut builder: DatabaseBuilder = DatabaseBuilder::new(); // TODO: confirm if this works with Tokio, otherwise move to Lazy static, and mutate it with unsafe
+    let db = Db::new(&mut builder, String::from("db_pomodorino")).unwrap();
 
     match Command::new(&args) {
         Ok(Command::Help) => {
             display_help();
         }
         Ok(Command::Add(task_name)) => {
-            db_add(&db, task_name).unwrap();
-            let tasks = db_read_all(&db).unwrap();
+            db.add(task_name).unwrap();
+            let tasks = db.read_all().unwrap();
 
             info!("db tasks: {:?}", tasks);
         }
         Ok(Command::Start) => {
-            let tasks = db_read_in_state(&db, String::from("todo")).unwrap();
+            let tasks = db.read_in_state(String::from("todo")).unwrap();
             for (i, task) in tasks.iter().enumerate() {
                 println!("{i}: {}", task.name)
             }
