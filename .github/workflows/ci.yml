@@ -23,6 +23,6 @@ jobs:
       - run: rustup component add rustfmt clippy
       - run: cargo fmt --check
       - run: cargo build --verbose
-      - run: cargo clippy --Dwarnings # prevent CI from passing on warnings
+      - run: cargo clippy -- -D warnings # prevent CI from passing on warnings
       - run: cargo test --verbose
 
