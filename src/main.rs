@@ -27,7 +27,7 @@ fn main() {
 
     // db init
     let mut builder: DatabaseBuilder = DatabaseBuilder::new(); // TODO: confirm if this works with Tokio, otherwise move to Lazy static, and mutate it with unsafe
-    let db = Db::new(&mut builder, String::from("db_pomodorino")).unwrap();
+    let db = Db::new(&mut builder, Some(String::from("db_pomodorino"))).unwrap();
 
     match Command::new(&args) {
         Ok(Command::Help) => {

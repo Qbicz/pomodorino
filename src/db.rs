@@ -44,12 +44,20 @@ pub struct Db<'a> {
 }
 
 impl<'a> Db<'a> {
-    pub fn new(builder: &'a mut DatabaseBuilder, db_path: String) -> Result<Self, db_type::Error> {
+    pub fn new(
+        builder: &'a mut DatabaseBuilder,
+        db_path: Option<String>,
+    ) -> Result<Self, db_type::Error> {
         // Initialize the model
         builder.define::<Task>()?;
+        let db;
 
         // Create a database
-        let db = builder.create(db_path)?;
+        if let Some(db_path) = db_path {
+            db = builder.create(db_path)?;
+        } else {
+            db = builder.create_in_memory()?;
+        }
 
         Ok(Self { db })
     }
@@ -66,7 +74,7 @@ impl<'a> Db<'a> {
         // Read all tasks
         // Open a read-only transaction
         let r = self.db.r_transaction()?;
-        // Iterate items with name starting with "red"
+        // Iterate over the items
         let values: Vec<Task> = r.scan().primary()?.all().collect();
         Ok(values)
     }
@@ -79,4 +87,70 @@ impl<'a> Db<'a> {
     // pub fn rm() {}
     // pub fn set_done() {}
     // pub fn set_todo() {}
+
+    // List suppressed as the function is used in tests.
+    #[allow(dead_code)]
+    // Function to clean up all information from the database.
+    pub fn clear(&self) -> Result<(), db_type::Error> {
+        let rw = self.db.rw_transaction().unwrap();
+        for entry in rw.scan().primary()?.all() {
+            let entry: Task = entry;
+            info!("clear: Removing {:?}", entry);
+            rw.remove(entry)?;
+        }
+        rw.commit()?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    // Only 1 test uses on-disk db. There's no good setup/teardown in Rust testing so each test has it's own db
+    const TEST_DB_PATH: &str = "test_db_pomodorino";
+
+    #[test]
+    fn test_on_disk_db() {
+        let mut builder: DatabaseBuilder = DatabaseBuilder::new(); // TODO: confirm if this works with Tokio, otherwise move to Lazy static, and mutate it with unsafe
+        let db = Db::new(&mut builder, Some(String::from(TEST_DB_PATH))).unwrap();
+        let task_name = String::from("Test Task on disk");
+        let test_name = task_name.clone();
+        db.add(task_name).unwrap();
+        let tasks = db.read_all().unwrap();
+
+        assert_eq!(test_name, tasks.get(0).unwrap().name);
+        fs::remove_file(TEST_DB_PATH).unwrap();
+    }
+
+    const TEST_DB_PATH_IN_MEM: Option<String> = None; // use in memory database to allow running tests concurrently
+
+    #[test]
+    fn test_add_single() {
+        let mut builder: DatabaseBuilder = DatabaseBuilder::new(); // TODO: confirm if this works with Tokio, otherwise move to Lazy static, and mutate it with unsafe
+        let db = Db::new(&mut builder, TEST_DB_PATH_IN_MEM).unwrap();
+        let task_name = String::from("Test Task");
+        let test_name = task_name.clone();
+        db.add(task_name).unwrap();
+        let tasks = db.read_all().unwrap();
+
+        assert_eq!(test_name, tasks.get(0).unwrap().name);
+        let _ = db.clear();
+    }
+
+    #[test]
+    fn test_add_empty() {
+        let mut builder: DatabaseBuilder = DatabaseBuilder::new(); // TODO: confirm if this works with Tokio, otherwise move to Lazy static, and mutate it with unsafe
+        let db = Db::new(&mut builder, TEST_DB_PATH_IN_MEM).unwrap();
+        let task_name = String::from("");
+        let test_name = task_name.clone();
+        db.add(task_name).unwrap();
+        let tasks = db.read_all().unwrap();
+
+        assert_eq!(test_name, tasks.get(0).unwrap().name);
+        let _ = db.clear();
+    }
+
+    #[test]
+    fn test_clear() {}
 }
