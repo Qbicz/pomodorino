@@ -64,7 +64,7 @@ impl<'a> Db<'a> {
     pub fn add(&self, name: String) -> Result<(), db_type::Error> {
         info!("db_add: {name}");
 
-        let rw = self.db.rw_transaction().unwrap();
+        let rw = self.db.rw_transaction().unwrap(); // TODO: remove all unwraps (excluding tests)
         rw.insert(Task::new(name))?;
         rw.commit()?;
         info!("transaction committed!");
@@ -149,6 +149,31 @@ mod tests {
 
         assert_eq!(test_name, tasks.get(0).unwrap().name);
         let _ = db.clear();
+    }
+
+    #[test]
+    fn test_read_all() {
+        let mut builder: DatabaseBuilder = DatabaseBuilder::new(); // TODO: confirm if this works with Tokio, otherwise move to Lazy static, and mutate it with unsafe
+        let db = Db::new(&mut builder, TEST_DB_PATH_IN_MEM).unwrap();
+        let mut test_names: Vec<String> = vec![];
+
+        for i in 1..3 {
+            let task_name = String::from("Task ") + &i.to_string();
+            test_names.push(task_name.clone());
+            db.add(task_name).unwrap();
+        }
+        let tasks = db.read_all().unwrap();
+
+        // iterator used (needless_range_loop clippy suggestion)
+        for (i, test_name) in test_names.iter().enumerate().take(2) {
+            assert_eq!(*test_name, tasks.get(i).unwrap().name);
+        }
+        let _ = db.clear();
+    }
+
+    #[test]
+    fn test_read_in_state() {
+        // TODO
     }
 
     #[test]
