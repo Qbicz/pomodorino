@@ -50,11 +50,20 @@ fn main() {
                 Ok(_input_size) => match input.trim_end().parse::<usize>() {
                     Ok(task_num) => {
                         let task_to_start = tasks.get(task_num);
-                        println!("Task {task_num} was chosen: {:?}", task_to_start.unwrap());
+
+                        match task_to_start {
+                            Some(task) => {
+                                info!("Task {task_num} was chosen: {:?}", task);
+                                if let Err(e) = db.set_done(&task.name) {
+                                    error!("Failed to set task to done: {e}");
+                                }
+                            }
+                            None => error!("No task in database with index {task_num}"),
+                        }
                     }
                     Err(e) => error!("Error parsing input {input} to number: {e}"),
                 },
-                Err(error) => println!("error: {error}"),
+                Err(error) => error!("Failed to read input: {error}"),
             }
         }
         Ok(command) => {

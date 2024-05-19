@@ -84,9 +84,28 @@ impl<'a> Db<'a> {
         Ok(tasks)
     }
 
-    // pub fn rm() {}
-    // pub fn set_done() {}
+    pub fn set_done(&self, name: &String) -> Result<(), db_type::Error> {
+        let rw = self.db.rw_transaction().unwrap(); // TODO: remove all unwraps (excluding tests)
+
+        // Find task with the provided name
+        rw.update(
+            Task {
+                name: name.to_owned(),
+                state: String::from("todo"),
+            },
+            Task {
+                name: name.to_owned(),
+                state: String::from("done"),
+            },
+        )?;
+
+        rw.commit()?;
+
+        Ok(())
+    }
+
     // pub fn set_todo() {}
+    // pub fn rm() {}
 
     // List suppressed as the function is used in tests.
     #[allow(dead_code)]
