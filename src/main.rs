@@ -103,4 +103,6 @@ async fn main() {
 fn display_help() {
     println!("Usage: pomodorino <command> [task string]");
     println!("add command requires payload, others don't");
+
+    println!("Available commands: {:?}", Command::get_commands());
 }
