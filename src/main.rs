@@ -19,9 +19,14 @@ use log::{error, info};
 use simple_logger::SimpleLogger;
 use std::{env, io};
 
-fn main() {
-    info!("Pomodorino start");
+// timers.rs
+use std::time::Duration;
+use tokio::time::sleep;
+
+#[tokio::main(flavor = "current_thread")]
+async fn main() {
     SimpleLogger::new().init().unwrap();
+    info!("Pomodorino app starting");
 
     let args: Vec<String> = env::args().collect();
 
@@ -44,7 +49,7 @@ fn main() {
             for (i, task) in tasks.iter().enumerate() {
                 println!("{i}: {}", task.name)
             }
-            info!("Choose a task to start: ");
+            println!("\nChoose a task to start 🍅:");
             let mut input = String::new();
             match io::stdin().read_line(&mut input) {
                 Ok(_input_size) => match input.trim_end().parse::<usize>() {
@@ -54,9 +59,26 @@ fn main() {
                         match task_to_start {
                             Some(task) => {
                                 info!("Task {task_num} was chosen: {:?}", task);
+
+                                // TODO: move to a timer.rs module
+                                // Start timer, track and display time left every second
+
+                                // TODO: move to config module
+                                let mut seconds_left = 25 * 60;
+
+                                while seconds_left > 0 {
+                                    sleep(Duration::from_secs(1)).await;
+                                    seconds_left -= 1;
+                                    // TODO: update timer view
+                                    println!("{}m{} left", seconds_left / 60, seconds_left % 60);
+                                }
+
+                                // When timer finishes, mark as done. TODO: pass as function to ticking_timer()
                                 if let Err(e) = db.set_done(&task.name) {
                                     error!("Failed to set task to done: {e}");
                                 }
+
+                                // Start 5m timer as a break
                             }
                             None => error!("No task in database with index {task_num}"),
                         }
