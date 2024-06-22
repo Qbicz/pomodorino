@@ -78,7 +78,25 @@ async fn main() {
                                     error!("Failed to set task to done: {e}");
                                 }
 
-                                // Start 5m timer as a break
+                                // TODO: play sound
+
+                                println!("Start a break!");
+
+                                let mut break_seconds_left = 5 * 60;
+
+                                while break_seconds_left > 0 {
+                                    sleep(Duration::from_secs(1)).await;
+                                    break_seconds_left -= 1;
+                                    // TODO: update timer view
+                                    println!(
+                                        "break: {}m{} left",
+                                        break_seconds_left / 60,
+                                        break_seconds_left % 60
+                                    );
+                                }
+
+                                println!("Finished break. Pick a new task.");
+                                // TODO: play sound
                             }
                             None => error!("No task in database with index {task_num}"),
                         }
