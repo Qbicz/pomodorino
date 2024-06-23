@@ -68,9 +68,6 @@ async fn main() {
         matches.get_one::<String>("command"),
         matches.get_one::<String>("name"),
     ) {
-        Ok(Command::Help) => {
-            display_help();
-        }
         Ok(Command::Add(task_name)) => {
             db.add(task_name).unwrap();
             let tasks = db.read_all().unwrap();
@@ -153,11 +150,4 @@ async fn main() {
             );
         }
     }
-}
-
-fn display_help() {
-    println!("Usage: pomodorino <command> [task string]");
-    println!("add command requires payload, others don't");
-
-    println!("Available commands: {:?}", Command::get_commands());
 }

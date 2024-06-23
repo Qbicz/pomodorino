@@ -49,10 +49,6 @@ impl Command {
             _ => Err(CommandError::NotSupported),
         }
     }
-
-    pub fn get_commands() -> Vec<&'static str> {
-        vec!["help", "add", "rm", "start", "stop", "manage"]
-    }
 }
 
 #[cfg(test)]
