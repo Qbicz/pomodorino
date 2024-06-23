@@ -138,7 +138,7 @@ mod tests {
         db.add(task_name).unwrap();
         let tasks = db.read_all().unwrap();
 
-        assert_eq!(test_name, tasks.get(0).unwrap().name);
+        assert_eq!(test_name, tasks.first().unwrap().name);
         fs::remove_file(TEST_DB_PATH).unwrap();
     }
 
@@ -153,7 +153,7 @@ mod tests {
         db.add(task_name).unwrap();
         let tasks = db.read_all().unwrap();
 
-        assert_eq!(test_name, tasks.get(0).unwrap().name);
+        assert_eq!(test_name, tasks.first().unwrap().name);
         let _ = db.clear();
     }
 
@@ -166,7 +166,7 @@ mod tests {
         db.add(task_name).unwrap();
         let tasks = db.read_all().unwrap();
 
-        assert_eq!(test_name, tasks.get(0).unwrap().name);
+        assert_eq!(test_name, tasks.first().unwrap().name);
         let _ = db.clear();
     }
 
