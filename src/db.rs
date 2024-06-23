@@ -46,7 +46,7 @@ pub struct Db<'a> {
 impl<'a> Db<'a> {
     pub fn new(
         builder: &'a mut DatabaseBuilder,
-        db_path: Option<String>,
+        db_path: Option<&String>,
     ) -> Result<Self, db_type::Error> {
         // Initialize the model
         builder.define::<Task>()?;
@@ -132,7 +132,7 @@ mod tests {
     #[test]
     fn test_on_disk_db() {
         let mut builder: DatabaseBuilder = DatabaseBuilder::new(); // TODO: confirm if this works with Tokio, otherwise move to Lazy static, and mutate it with unsafe
-        let db = Db::new(&mut builder, Some(String::from(TEST_DB_PATH))).unwrap();
+        let db = Db::new(&mut builder, Some(&String::from(TEST_DB_PATH))).unwrap();
         let task_name = String::from("Test Task on disk");
         let test_name = task_name.clone();
         db.add(task_name).unwrap();
@@ -142,7 +142,7 @@ mod tests {
         fs::remove_file(TEST_DB_PATH).unwrap();
     }
 
-    const TEST_DB_PATH_IN_MEM: Option<String> = None; // use in memory database to allow running tests concurrently
+    const TEST_DB_PATH_IN_MEM: Option<&String> = None; // use in memory database to allow running tests concurrently
 
     #[test]
     fn test_add_single() {
