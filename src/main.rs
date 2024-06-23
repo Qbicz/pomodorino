@@ -13,6 +13,7 @@
 mod command;
 mod db;
 
+use clap::{arg, command};
 use command::Command;
 use db::{DatabaseBuilder, Db};
 use log::{error, info};
@@ -28,13 +29,44 @@ async fn main() {
     SimpleLogger::new().init().unwrap();
     info!("Pomodorino app starting");
 
-    let args: Vec<String> = env::args().collect();
+    let matches = command!() // requires `cargo` feature
+        .arg(
+            arg!([command] "Command: add, rm, start, stop")
+                .value_parser(["add", "rm", "start", "stop"]),
+        )
+        .arg(
+            arg!(
+                -n --name <TASK_NAME> "Task name, needed for `add` command"
+            )
+            // We don't have syntax yet for optional options, so manually calling `required`
+            .required(false),
+        )
+        .arg(
+            arg!(
+                -d --database <FILE> "Sets a custom database file (for testing)"
+            )
+            // We don't have syntax yet for optional options, so manually calling `required`
+            .required(false),
+        )
+        .get_matches();
 
-    // db init
+    // You can check the value provided by positional arguments, or option arguments
+    if let Some(command_arg) = matches.get_one::<String>("command") {
+        println!("Value for command: {command_arg}");
+    }
+
+    if let Some(task_name) = matches.get_one::<String>("name") {
+        println!("Value for task name: {}", task_name);
+    }
+
+    // db init - need to inject db path for integration test
     let mut builder: DatabaseBuilder = DatabaseBuilder::new(); // TODO: confirm if this works with Tokio, otherwise move to Lazy static, and mutate it with unsafe
     let db = Db::new(&mut builder, Some(String::from("db_pomodorino"))).unwrap();
 
-    match Command::new(&args) {
+    match Command::new(
+        matches.get_one::<String>("command"),
+        matches.get_one::<String>("name"),
+    ) {
         Ok(Command::Help) => {
             display_help();
         }
@@ -108,8 +140,9 @@ async fn main() {
         }
         Ok(command) => {
             info!(
-                "Command not implemented yet: {:?}, args: {:?}",
-                command, args
+                "Command not implemented yet: {:?}, arg: {:?}",
+                command,
+                matches.get_one::<String>("command")
             );
         }
         Err(e) => {

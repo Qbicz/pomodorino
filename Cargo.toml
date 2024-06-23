@@ -12,3 +12,7 @@ native_db = "0.6.0"
 native_model = "0.4.14"
 serde = { version = "1.0", features = ["derive"] } # for native_db
 tokio = { version = "1", features = ["rt", "macros", "time"] }
+clap = { version = "4.5.7", features = ["cargo"] }
+
+[dev-dependencies]
+test_bin = "0.4.0"

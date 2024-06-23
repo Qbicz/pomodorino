@@ -28,21 +28,19 @@ pub enum Command {
 }
 
 impl Command {
-    pub fn new(args: &[String]) -> Result<Self, CommandError> {
-        if args.len() < 2 {
-            // commands need type
-            return Err(CommandError::ArgError);
-        }
+    pub fn new(command: Option<&String>, payload: Option<&String>) -> Result<Self, CommandError> {
+        let command = command.ok_or(CommandError::ArgError)?;
 
-        let command_type = args[1].clone();
+        let command_type = command.clone();
         match command_type.as_str() {
             "help" => Ok(Command::Help),
             "add" => {
                 // add command also needs payload
-                if args.len() < 3 {
-                    return Err(CommandError::ArgError);
+                if let Some(payload) = payload {
+                    Ok(Command::Add(payload.clone()))
+                } else {
+                    Err(CommandError::ArgError)
                 }
-                Ok(Command::Add(args[2].clone()))
             }
             "rm" => Ok(Command::Remove),
             "start" => Ok(Command::Start),
@@ -64,35 +62,38 @@ mod tests {
 
     #[test]
     fn test_add() {
-        let args = [
-            String::from("target/debug/pomodorino"),
-            String::from("add"),
-            String::from("Task 1"),
-        ];
-        assert_eq!(Command::new(&args), Ok(Command::Add("Task 1".to_string())));
+        assert_eq!(
+            Command::new(Some(&String::from("add")), Some(&String::from("Task 1"))),
+            Ok(Command::Add("Task 1".to_string()))
+        );
     }
 
     #[test]
     fn test_add_no_arg() {
-        let args = [String::from("target/debug/pomodorino"), String::from("add")];
-        assert_eq!(Command::new(&args), Err(CommandError::ArgError));
+        assert_eq!(
+            Command::new(Some(&String::from("add")), None),
+            Err(CommandError::ArgError)
+        );
     }
 
     #[test]
     fn test_too_little_arg() {
-        let args = [String::from("target/debug/pomodorino")];
-        assert_eq!(Command::new(&args), Err(CommandError::ArgError));
+        assert_eq!(Command::new(None, None), Err(CommandError::ArgError));
     }
 
     #[test]
     fn test_rm() {
-        let args = [String::from("pomodorino"), String::from("rm")];
-        assert_eq!(Command::new(&args), Ok(Command::Remove));
+        assert_eq!(
+            Command::new(Some(&String::from("rm")), None),
+            Ok(Command::Remove)
+        );
     }
 
     #[test]
     fn test_not_supported() {
-        let args = [String::from("pomodorino"), String::from("flytothemoon")];
-        assert_eq!(Command::new(&args), Err(CommandError::NotSupported));
+        assert_eq!(
+            Command::new(Some(&String::from("flytothemoon")), None),
+            Err(CommandError::NotSupported)
+        );
     }
 }
