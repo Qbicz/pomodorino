@@ -21,6 +21,7 @@ impl fmt::Display for CommandError {
 pub enum Command {
     Add(String),
     Remove,
+    Show,
     Start,
     Stop,
     Manage,
@@ -43,6 +44,7 @@ impl Command {
                 }
             }
             "rm" => Ok(Command::Remove),
+            "show" => Ok(Command::Show),
             "start" => Ok(Command::Start),
             "stop" => Ok(Command::Stop),
             "manage" => Ok(Command::Manage),

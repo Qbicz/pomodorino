@@ -16,7 +16,7 @@ mod db;
 use clap::{arg, command};
 use command::Command;
 use db::{DatabaseBuilder, Db};
-use log::{error, info};
+use log::{error, info, LevelFilter};
 use simple_logger::SimpleLogger;
 use std::{env, io};
 
@@ -26,11 +26,14 @@ use tokio::time::sleep;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
-    SimpleLogger::new().init().unwrap();
+    SimpleLogger::new()
+        .with_level(LevelFilter::Info)
+        .init()
+        .unwrap();
 
     let matches =
         command!() // requires `cargo` feature
-            .arg(arg!([command] "Command").value_parser(["add", "rm", "start", "stop"]))
+            .arg(arg!([command] "Command").value_parser(["add", "rm", "show", "start", "stop"]))
             .arg(
                 arg!(
                     -n --name <TASK_NAME> "Task name, needed for `add` command"
@@ -47,19 +50,6 @@ async fn main() {
             )
             .get_matches();
 
-    // You can check the value provided by positional arguments, or option arguments
-    if let Some(command_arg) = matches.get_one::<String>("command") {
-        println!("Value for command: {command_arg}");
-    }
-
-    if let Some(task_name) = matches.get_one::<String>("name") {
-        println!("Value for task name: {}", task_name);
-    }
-
-    if let Some(database) = matches.get_one::<String>("database") {
-        println!("Value for database path: {}", database);
-    }
-
     // db init - injecting db path is possible from CLI for integration testing
     let mut builder: DatabaseBuilder = DatabaseBuilder::new(); // TODO: confirm if this works with Tokio, otherwise move to Lazy static, and mutate it with unsafe
     let db = Db::new(&mut builder, matches.get_one::<String>("database")).unwrap();
@@ -70,9 +60,11 @@ async fn main() {
     ) {
         Ok(Command::Add(task_name)) => {
             db.add(task_name).unwrap();
+        }
+        Ok(Command::Show) => {
             let tasks = db.read_all().unwrap();
 
-            info!("db tasks: {:?}", tasks);
+            println!("db tasks: {:?}", tasks);
         }
         Ok(Command::Start) => {
             let tasks = db.read_in_state(String::from("todo")).unwrap();

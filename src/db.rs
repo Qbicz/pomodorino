@@ -1,5 +1,5 @@
 // DB start
-use log::info;
+use log::{debug, info};
 use native_db::*;
 use native_model::{native_model, Model};
 use serde::{Deserialize, Serialize};
@@ -62,12 +62,12 @@ impl<'a> Db<'a> {
         Ok(Self { db })
     }
     pub fn add(&self, name: String) -> Result<(), db_type::Error> {
-        info!("db_add: {name}");
+        debug!("db_add: {name}");
 
         let rw = self.db.rw_transaction().unwrap(); // TODO: remove all unwraps (excluding tests)
         rw.insert(Task::new(name))?;
         rw.commit()?;
-        info!("transaction committed!");
+        debug!("transaction committed!");
         Ok(())
     }
     pub fn read_all(&self) -> Result<Vec<Task>, db_type::Error> {
